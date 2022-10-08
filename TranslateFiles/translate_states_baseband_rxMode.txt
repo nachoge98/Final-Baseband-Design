@@ -1,0 +1,5 @@
+0 idle_rxMode
+1 listening_rxMode
+2 receiving_rxMode
+3 transmitting_rxMode
+

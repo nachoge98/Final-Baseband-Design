@@ -1,0 +1,8 @@
+0 idle_txMode
+1 rec_AA1_txMode
+2 rec_AA2_txMode
+3 saved_AA_txMode
+4 delayState_txMode
+5 transmitting_txMode
+6 transmitting_savedMode
+

@@ -1,0 +1,18 @@
+#comments
+0 none
+33 to_clearAA
+34 to_rxOne
+36 to_rxContinuous
+40 to_rxStop
+65 to_sendStatus
+66 to_txSavedBroad
+68 to_txSavedList
+161 to_modifyAA
+162 to_setTrPower
+164 to_savePacket
+168 to_saveAA
+193 to_txSavedAA
+194 to_tx
+196 to_saveListAA
+17 to_actEC
+20 soft_reset

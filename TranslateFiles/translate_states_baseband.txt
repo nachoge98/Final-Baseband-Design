@@ -1,0 +1,18 @@
+0 idle
+1 clearAA
+2 rxOne
+3 rxContinuous
+4 sendStatus
+5 txSavedBroad
+6 txSavedList
+7 modifyAA
+8 setTrPower
+9 savePacket
+10 saveAA
+11 txSavedAA
+12 tx
+13 saveListAA
+14 actEC
+15 deactEC
+16 clearPayload
+

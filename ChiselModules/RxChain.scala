@@ -217,7 +217,7 @@ class RxChain extends Module {
   val ownAccessAddress = Wire(UInt(32.W))//RegInit("01101011011111011001000101110001".U(32.W))
   ownAccessAddress := io.in.ownAccessAddress.bits //the received AA is aready reversed to match the bit order
   
-  val reversedBroadcastAA = "b10001110100010011011111011010110".U
+  val reversedBroadcastAA = "b01101011011111011001000101110001".U
   
   //Preamble Detector block wires:
   
@@ -252,7 +252,7 @@ class RxChain extends Module {
   io.in.data.ready := preambleBlock.io.in.data.ready
   preambleBlock.io.in.data.valid := pd_in_valid
 
-  preambleBlock.io.in.aa_0.bits := ownAccessAddress(0)
+  preambleBlock.io.in.aa_0.bits := ownAccessAddress(31)//0
   preambleBlock.io.in.aa_0.valid := pd_aa0_valid
   // := preambleBlock.io.in.aa_0.ready
 

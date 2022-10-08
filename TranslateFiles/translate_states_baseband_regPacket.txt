@@ -1,0 +1,4 @@
+0 idle_regPacket
+1 length_regPacket
+2 receiving_regPacket
+

@@ -14,6 +14,7 @@ import dsptools.numbers._
 //import OctetGenerator._
 
 
+
 // INPUTS
 class BPInputBundle extends Bundle { //cambiado el input bundle para anadir mi enable, y la AA.
   

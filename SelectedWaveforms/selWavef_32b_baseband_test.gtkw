@@ -1,0 +1,72 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Thu Jun 30 13:42:49 2022
+[*]
+[dumpfile] "/home/ignacio/Desktop/thesis/chipyard/sims/verilator/32b_baseband_test_waveform.vcd"
+[dumpfile_mtime] "Thu Jun 30 13:10:23 2022"
+[dumpfile_size] 655143016
+[savefile] "/home/ignacio/Desktop/thesis/chipyard/generators/chipyard/src/main/scala/Final-Baseband-Design/SelectedWaveforms/selWavef_32b_baseband_test.gtkw"
+[timestart] 216400
+[size] 1848 1016
+[pos] -51 -51
+*-12.000000 222230 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.TestHarness.
+[treeopen] TOP.TestHarness.chiptop.
+[treeopen] TOP.TestHarness.chiptop.system.
+[treeopen] TOP.TestHarness.chiptop.system.baseband.
+[treeopen] TOP.TestHarness.chiptop.system.baseband.bb.
+[sst_width] 406
+[signals_width] 345
+[sst_expanded] 1
+[sst_vpaned_height] 219
+@28
+TOP.clock
+TOP.reset
+@200
+-
+-Inputs
+@22
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.io_inFIFO_bits_data[31:0]
+@2024
+^6 /home/ignacio/Desktop/thesis/chipyard/generators/chipyard/src/main/scala/Final-Baseband-Design/TranslateFiles/translate_commands.txt
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.control_data[7:0]
+@28
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.io_inFIFO_valid
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.io_inFIFO_ready
+@200
+-
+@28
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.io_in_data_bits
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.io_in_data_valid
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.io_in_data_ready
+@200
+-
+-Outputs
+@22
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.io_outFIFO_bits_data[31:0]
+@28
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.io_outFIFO_valid
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.io_outFIFO_ready
+@200
+-
+@28
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.io_out_data_bits
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.io_out_data_valid
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.io_out_data_ready
+@200
+-
+-Registers
+@2024
+^1 /home/ignacio/Desktop/thesis/chipyard/generators/chipyard/src/main/scala/Final-Baseband-Design/TranslateFiles/translate_states_baseband.txt
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.state[4:0]
+^2 /home/ignacio/Desktop/thesis/chipyard/generators/chipyard/src/main/scala/Final-Baseband-Design/TranslateFiles/translate_states_baseband_listAA.txt
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.state_listAA[1:0]
+^3 /home/ignacio/Desktop/thesis/chipyard/generators/chipyard/src/main/scala/Final-Baseband-Design/TranslateFiles/translate_states_baseband_regPacket.txt
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.state_regPacket[1:0]
+^4 /home/ignacio/Desktop/thesis/chipyard/generators/chipyard/src/main/scala/Final-Baseband-Design/TranslateFiles/translate_states_baseband_rxMode.txt
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.state_rxMode[1:0]
+^5 /home/ignacio/Desktop/thesis/chipyard/generators/chipyard/src/main/scala/Final-Baseband-Design/TranslateFiles/translate_states_baseband_txMode.txt
+TOP.TestHarness.chiptop.system.baseband.bb.designedBaseband.state_txMode[2:0]
+[pattern_trace] 1
+[pattern_trace] 0

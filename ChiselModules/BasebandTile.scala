@@ -15,9 +15,10 @@ import freechips.rocketchip.subsystem._
 //import chipyard.baseband
 
 /**
-  * The Input FIFO for DATA
+  * The memory interface writes entries into the queue.
+  * They stream out the streaming interface.
   */
-abstract class InFIFOWriteQueue
+abstract class WriteQueue
 (
   val depth: Int = 8,
   val streamParameters: AXI4StreamMasterParameters = AXI4StreamMasterParameters()
@@ -32,7 +33,7 @@ abstract class InFIFOWriteQueue
     val out = streamNode.out(0)._1
 
     // width (in bits) of the output interface
-    val width = 32//before 64
+    val width = 32 //64
 
     // instantiate a queue
     val queue = Module(new Queue(UInt(width.W), depth))
@@ -55,12 +56,12 @@ abstract class InFIFOWriteQueue
 }
 
 
-class TLInFIFOWriteQueue
+class TLWriteQueue
 (
-  depth: Int = 8,//It has to be 8 for 64b, and 4 for 32b
+  depth: Int = 4,//for 32bit 4, for 64 bit 8.
   csrAddress: AddressSet = AddressSet(0x2000, 0xff),
-  beatBytes: Int = 8,//It has to be 8 for 64b, and 4 for 32b
-)(implicit p: Parameters) extends InFIFOWriteQueue(depth) with TLHasCSR {
+  beatBytes: Int = 4//for 32bit 4, for 64 bit 8.
+)(implicit p: Parameters) extends WriteQueue(depth) with TLHasCSR {
   val devname = "tlQueueIn"
   val devcompat = Seq("ucb-art", "dsptools")
   val device = new SimpleDevice(devname, devcompat) {
@@ -73,40 +74,41 @@ class TLInFIFOWriteQueue
   override val mem = Some(TLRegisterNode(address = Seq(csrAddress), device = device, beatBytes = beatBytes))
 }
 
+
 /**
-  * The Input Data for the Controller (also a FIFO)
+  * The streaming interface adds elements into the queue.
+  * The memory interface can read elements out of the queue.
   */
-abstract class InConWriteQueue
+abstract class ReadQueue
 (
   val depth: Int = 8,
-  val streamParameters: AXI4StreamMasterParameters = AXI4StreamMasterParameters()
-)(implicit p: Parameters) extends LazyModule with HasCSR {
-  // stream node, output only
-  val streamNode = AXI4StreamMasterNode(streamParameters)
+  val streamParameters: AXI4StreamSlaveParameters = AXI4StreamSlaveParameters()
+)(implicit p: Parameters)extends LazyModule with HasCSR {
+  val streamNode = AXI4StreamSlaveNode(streamParameters)
 
   lazy val module = new LazyModuleImp(this) {
-    require(streamNode.out.length == 1)
+    require(streamNode.in.length == 1)
 
-    // get the output bundle associated with the AXI4Stream node
-    val out = streamNode.out(0)._1
 
-    // width (in bits) of the output interface
-    val width = 8//I only need 8 bits for the controller input
-
+    // get the input bundle associated with the AXI4Stream node
+    val in = streamNode.in(0)._1
+    // width (in bits) of the input interface
+    val width = 32
     // instantiate a queue
     val queue = Module(new Queue(UInt(width.W), depth))
-
     // connect queue output to streaming output
-    out.valid := queue.io.deq.valid
-    out.bits.data := queue.io.deq.bits
 
+
+    queue.io.enq.valid := in.valid
+    queue.io.enq.bits := in.bits.data
+    in.ready := queue.io.enq.ready
     // don't use last
-    out.bits.last := false.B
-    queue.io.deq.ready := out.ready
+    //in.bits.last := false.B
+
 
     regmap(
-      // each write adds an entry to the queue
-      0x0 -> Seq(RegField.w(width, queue.io.enq)),
+      // each read cuts an entry from the queue
+      0x0 -> Seq(RegField.r(width, queue.io.deq)),
       // read the number of entries in the queue
       (width+7)/8 -> Seq(RegField.r(width, queue.io.count)),
     )
@@ -114,72 +116,12 @@ abstract class InConWriteQueue
 }
 
 
-class TLInConWriteQueue
+class TLReadQueue
 (
-  depth: Int = 8,//It has to be 8 for 64b, and 4 for 32b
+  depth: Int = 4,//for 32bit 4, for 64 bit 8.
   csrAddress: AddressSet = AddressSet(0x2100, 0xff),
-  beatBytes: Int = 8,//It has to be 8 for 64b, and 4 for 32b
-)(implicit p: Parameters) extends InConWriteQueue(depth) with TLHasCSR {
-  val devname = "tlQueueIn"
-  val devcompat = Seq("ucb-art", "dsptools")
-  val device = new SimpleDevice(devname, devcompat) {
-    override def describe(resources: ResourceBindings): Description = {
-      val Description(name, mapping) = super.describe(resources)
-      Description(name, mapping)
-    }
-  }
-  // make diplomatic TL node for regmap
-  override val mem = Some(TLRegisterNode(address = Seq(csrAddress), device = device, beatBytes = beatBytes))
-}
-
-
-
-/**
-  * The Output FIFO for Data
-  */
-abstract class OutFIFOReadQueue
-(
-  val depth: Int = 8,
-  val streamParameters: AXI4StreamSlaveParameters = AXI4StreamSlaveParameters()
-)(implicit p: Parameters)extends LazyModule with HasCSR {
-  val streamNode = AXI4StreamSlaveNode(streamParameters)
-
-  lazy val module = new LazyModuleImp(this) {
-    require(streamNode.in.length == 1)
-
-
-    // get the input bundle associated with the AXI4Stream node
-    val in = streamNode.in(0)._1
-    // width (in bits) of the input interface
-    val width = 32//before 64 :21/02/2022
-    // instantiate a queue
-    val queue = Module(new Queue(UInt(width.W), depth))
-    // connect queue output to streaming output
-
-
-    queue.io.enq.valid := in.valid
-    queue.io.enq.bits := in.bits.data
-    in.ready := queue.io.enq.ready
-    // don't use last
-    //in.bits.last := false.B
-
-
-    regmap(
-      // each read cuts an entry from the queue
-      0x0 -> Seq(RegField.r(width, queue.io.deq)),
-      // read the number of entries in the queue
-      (width+7)/8 -> Seq(RegField.r(width, queue.io.count)),
-    )
-  }
-}
-
-
-class TLOutFIFOReadQueue
-(
-  depth: Int = 8,//It has to be 8 for 64b, and 4 for 32b
-  csrAddress: AddressSet = AddressSet(0x2200, 0xff),
-  beatBytes: Int = 8//It has to be 8 for 64b, and 4 for 32b
-)(implicit p: Parameters) extends OutFIFOReadQueue(depth) with TLHasCSR {
+  beatBytes: Int = 4//for 32bit 4, for 64 bit 8.
+)(implicit p: Parameters) extends ReadQueue(depth) with TLHasCSR {
   val devname = "tlQueueOut"
   val devcompat = Seq("ucb-art", "dsptools")
   val device = new SimpleDevice(devname, devcompat) {
@@ -193,169 +135,40 @@ class TLOutFIFOReadQueue
 
 }
 
-/**
-  * The Output to the Antenna (also a FIFO for simulation)
-  */
-abstract class OutAntennaReadQueue
-(
-  val depth: Int = 8,
-  val streamParameters: AXI4StreamSlaveParameters = AXI4StreamSlaveParameters()
-)(implicit p: Parameters)extends LazyModule with HasCSR {
-  val streamNode = AXI4StreamSlaveNode(streamParameters)
-
-  lazy val module = new LazyModuleImp(this) {
-    require(streamNode.in.length == 1)
-
-
-    // get the input bundle associated with the AXI4Stream node
-    val in = streamNode.in(0)._1
-    // width (in bits) of the input interface
-    val width = 1//before 64
-    // instantiate a queue
-    val queue = Module(new Queue(UInt(width.W), depth))
-    // connect queue output to streaming output
-
-
-    queue.io.enq.valid := in.valid
-    queue.io.enq.bits := in.bits.data
-    in.ready := queue.io.enq.ready
-    // don't use last
-    //in.bits.last := false.B
-
-
-    regmap(
-      // each read cuts an entry from the queue
-      0x0 -> Seq(RegField.r(width, queue.io.deq)),
-      // read the number of entries in the queue
-      (width+7)/8 -> Seq(RegField.r(width, queue.io.count)),
-    )
-  }
-}
-
-
-class TLOutAntennaReadQueue
-(
-  depth: Int = 8,//It has to be 8 for 64b, and 4 for 32b
-  csrAddress: AddressSet = AddressSet(0x2300, 0xff),
-  beatBytes: Int = 8//It has to be 8 for 64b, and 4 for 32b
-)(implicit p: Parameters) extends OutAntennaReadQueue(depth) with TLHasCSR {
-  val devname = "tlQueueOut"
-  val devcompat = Seq("ucb-art", "dsptools")
-  val device = new SimpleDevice(devname, devcompat) {
-    override def describe(resources: ResourceBindings): Description = {
-      val Description(name, mapping) = super.describe(resources)
-      Description(name, mapping)
-    }
-  }
-  // make diplomatic TL node for regmap
-  override val mem = Some(TLRegisterNode(address = Seq(csrAddress), device = device, beatBytes = beatBytes))
-
-}
-
-/**
-  * The Input from the antenna (also a FIFO)
-  */
-abstract class InAntennaWriteQueue
-(
-  val depth: Int = 8,
-  val streamParameters: AXI4StreamMasterParameters = AXI4StreamMasterParameters()
-)(implicit p: Parameters) extends LazyModule with HasCSR {
-  // stream node, output only
-  val streamNode = AXI4StreamMasterNode(streamParameters)
-
-  lazy val module = new LazyModuleImp(this) {
-    require(streamNode.out.length == 1)
-
-    // get the output bundle associated with the AXI4Stream node
-    val out = streamNode.out(0)._1
-
-    // width (in bits) of the output interface
-    val width = 1//I only need 8 bits for the controller input
-
-    // instantiate a queue
-    val queue = Module(new Queue(UInt(width.W), depth))
-
-    // connect queue output to streaming output
-    out.valid := queue.io.deq.valid
-    out.bits.data := queue.io.deq.bits
-
-    // don't use last
-    out.bits.last := false.B
-    queue.io.deq.ready := out.ready
-
-    regmap(
-      // each write adds an entry to the queue
-      0x0 -> Seq(RegField.w(width, queue.io.enq)),
-      // read the number of entries in the queue
-      (width+7)/8 -> Seq(RegField.r(width, queue.io.count)),
-    )
-  }
-}
-
-
-class TLInAntennaWriteQueue
-(
-  depth: Int = 8,//It has to be 8 for 64b, and 4 for 32b
-  csrAddress: AddressSet = AddressSet(0x2400, 0xff),
-  beatBytes: Int = 8,//It has to be 8 for 64b, and 4 for 32b
-)(implicit p: Parameters) extends InAntennaWriteQueue(depth) with TLHasCSR {
-  val devname = "tlQueueIn"
-  val devcompat = Seq("ucb-art", "dsptools")
-  val device = new SimpleDevice(devname, devcompat) {
-    override def describe(resources: ResourceBindings): Description = {
-      val Description(name, mapping) = super.describe(resources)
-      Description(name, mapping)
-    }
-  }
-  // make diplomatic TL node for regmap
-  override val mem = Some(TLRegisterNode(address = Seq(csrAddress), device = device, beatBytes = beatBytes))
-}
 
 abstract class BasebandBlock[D, U, EO, EI, B <: Data] (implicit p: Parameters) extends DspBlock[D, U, EO, EI, B] {
   val streamNode = AXI4StreamIdentityNode()
   val mem = None
 
   lazy val module = new LazyModuleImp(this) {
-    require(streamNode.in.length == 3)//
-    require(streamNode.out.length == 2)//
+    require(streamNode.in.length == 1)
+    require(streamNode.out.length == 1)
 
     val in = streamNode.in.head._1
-    val con = streamNode.in.head._2
-    val inFIFO = streamNode.in.head._3
     val out = streamNode.out.head._1
-    val outFIFO = streamNode.out.head._2
 
     //unpack and pack
-    val baseband = Module(new Baseband())
-    /*
-    Baseband I/O Bundles:
-    val in = Flipped(Decoupled(BasebandInputBundle())) //new BasebandInputBundle
-    val out = Decoupled(BasebandOutputBundle()) //new BasebandOutputBundle
-    val con = Flipped(Decoupled(BasebandControlBundle()))
-    val inFIFO = Flipped(Decoupled(BasebandInputFIFOBundle()))
-    val outFIFO = Decoupled(BasebandOutputFIFOBundle())
-    */
+    val designedBaseband = Module(new Baseband())
+    val fifo = Module(new FIFO_errors()) //fifo hardware chisel block.
     
-    
-    baseband.io.in.bits := in.bits.data.asTypeOf(new BasebandInputBundle())
-    baseband.io.in.valid := in.valid
-    in.ready := baseband.io.in.ready
-    
-    baseband.io.con.bits := con.bits.data.asTypeOf(new BasebandControlBundle())
-    baseband.io.con.valid := con.valid
-    con.ready := baseband.io.con.ready
-    
-    baseband.io.inFIFO.bits := inFIFO.bits.data.asTypeOf(new BasebandInputFIFOBundle())
-    baseband.io.inFIFO.valid := inFIFO.valid
-    inFIFO.ready := baseband.io.inFIFO.ready
+    designedBaseband.io.inFIFO.bits := in.bits.data.asTypeOf(new BasebandInputFIFOBundle())
+    designedBaseband.io.inFIFO.valid := in.valid
+    in.ready := designedBaseband.io.inFIFO.ready
 
-    out.bits.data := baseband.io.out.bits.asUInt()
-    out.valid := baseband.io.out.valid
-    baseband.io.out.ready := out.ready
+    out.valid := designedBaseband.io.outFIFO.valid
+    designedBaseband.io.outFIFO.ready := out.ready
+
+    out.bits.data := designedBaseband.io.outFIFO.bits.asUInt()
     
-    outFIFO.bits.data := baseband.io.outFIFO.bits.asUInt()
-    outFIFO.valid := baseband.io.outFIFO.valid
-    baseband.io.outFIFO.ready := outFIFO.ready
+    //fifo connection between the out and the in of the antenna.
+    fifo.io.in.bits.data := designedBaseband.io.out.data.bits
+    fifo.io.in.valid := designedBaseband.io.out.data.valid
+    designedBaseband.io.out.data.ready := fifo.io.in.ready
+    
+    designedBaseband.io.in.data.bits := fifo.io.out.bits.data
+    designedBaseband.io.in.data.valid := fifo.io.out.valid
+    fifo.io.out.ready := designedBaseband.io.in.data.ready
+    
   }
 }
 
@@ -365,27 +178,16 @@ class TLBasebandBlock(implicit p: Parameters)extends
 
 class BasebandThing
 (
-val depthWriteDataFIFO: Int = 70,//32, //the maximum length of the input is 2B Header + 257B Payload.// The data is written 32 bits at a time.
-val depthReadDataFIFO: Int = 90,//32, //The output data goes in a 24+8 bits, so
-val depthWriteControl : Int = 15//Usually we wont accumulate control signals in the FIFO, but just in case I gave it some length
-val depthAntenna : Int = 2136//2048//256//the maximum length of a baseband in Uncoded PHY is 1+4+259+3=267 bytes //edited
+val depthWriteDataFIFO: Int = 100,//32, //the maximum length of the input is 2B Header + 257B Payload.// The data is written 24 bits at a time, +8b of control
+val depthReadDataFIFO: Int = 90//32, //The output data goes in a 24+8 bits, so
 )(implicit p: Parameters) extends LazyModule {
   // instantiate lazy modules
-  val writeQueueDataFIFO = LazyModule(new TLInFIFOWriteQueue(depthWriteDataFIFO))
-  val writeQueueControlFIFO = LazyModule(new TLInConWriteQueue(depthWriteControl))
-  val writeQueueAntennaFIFO = LazyModule(new TLInAntennaWriteQueue(depthAntenna))
-  val baseband = LazyModule(new TLBasebandBlock())
-  val readQueueDataFIFO = LazyModule(new TLOutFIFOReadQueue(depthReadDataFIFO))
-  val readQueueAntennaFIFO = LazyModule(new TLOutAntennaReadQueue(depthAntenna))
+  val writeQueue = LazyModule(new TLWriteQueue(depthWriteDataFIFO))
+  val bb = LazyModule(new TLBasebandBlock())
+  val readQueue = LazyModule(new TLReadQueue(depthReadDataFIFO))
 
   // connect streamNodes of queues and cordic
-  //writeQueueDataFIFO.streamNode := baseband.streamNode := readQueueDataFIFO.streamNode
-  writeQueueDataFIFO.streamNode := baseband.streamNode.in.head._1
-  writeQueueControlFIFO.streamNode := baseband.streamNode.in.head._2
-  writeQueueAntennaFIFO.streamNode := baseband.streamNode.in.head._3
-  
-  baseband.streamNode.out.head._1 := readQueueDataFIFO.streamNode
-  baseband.streamNode.out.head._2 := readQueueAntennaFIFO.streamNode
+  readQueue.streamNode := bb.streamNode := writeQueue.streamNode
 
   lazy val module = new LazyModuleImp(this)
 }

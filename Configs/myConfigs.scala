@@ -8,9 +8,13 @@ import freechips.rocketchip.diplomacy.{AsynchronousCrossing}
 // nachoge98@gmail.com
 // edited copy of RocketConfigs.scala
 //in the path: /home/ignacio/Desktop/thesis/chipyard/generators/rocket-chip/src/main/scala/subsystem/Configs.scala ; I added the modified scratchpad
+// version to contain the designs with the final baseband design itself.
+
+//the config files and crap for the arty are in the directory:
+// ~/chipyard/fpga/src/main/scala/arty/
 // --------------
 /*
-class myTinyRocketConfig extends Config(
+class myBasebandTinyRocketConfig extends Config(
   new chipyard.config.WithTLSerialLocation(
     freechips.rocketchip.subsystem.FBUS,
     freechips.rocketchip.subsystem.PBUS) ++                       // attach TL serial adapter to f/p busses
@@ -19,7 +23,16 @@ class myTinyRocketConfig extends Config(
   new freechips.rocketchip.subsystem.WithNoMemPort ++             // remove backing memory
   new freechips.rocketchip.subsystem.With1TinyCore ++             // single tiny rocket-core
   new chipyard.config.AbstractConfig)
-
+*/
+class myBasebandRocketConfig extends Config(
+  new freechips.rocketchip.subsystem.WithNBigCores(1) ++         // single rocket-core
+  new chipyard.config.AbstractConfig)
+  
+class myBasebandErrorsRocketConfig extends Config(
+  new freechips.rocketchip.subsystem.WithNBigCores(1) ++         // single rocket-core, compiled including the errors FIFO instead of the normal one.
+  new chipyard.config.AbstractConfig)
+  
+/*
 class myModifiedTinyRocketConfig extends Config(
   new chipyard.config.WithTLSerialLocation(
     freechips.rocketchip.subsystem.FBUS,
